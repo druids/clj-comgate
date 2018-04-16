@@ -12,7 +12,7 @@ Leiningen/Boot
 --------------
 
 ```clojure
-[clj-comgate "0.0.0"]
+[clj-comgate "0.1.0"]
 ```
 
 
