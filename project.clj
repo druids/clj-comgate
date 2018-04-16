@@ -1,4 +1,4 @@
-(defproject clj-comgate "0.0.0"
+(defproject clj-comgate "0.1.0"
   :description "A client for Comgate Payments API"
   :url "https://github.com/druids/clj-comgate"
   :license {:name "MIT License"
