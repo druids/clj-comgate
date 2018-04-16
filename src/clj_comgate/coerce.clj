@@ -2,8 +2,7 @@
 
 
 (defmulti ->str
-  (fn [v]
-    (type v)))
+  type)
 
 
 (defmethod ->str clojure.lang.Keyword
