@@ -17,7 +17,7 @@
 (deftest create-payment-test
   (testing "should not create payment"
     (let [body "code=1400&message=Access+from+unauthorized+location+%5B109.81.209.223%5D%21"
-          expected-response {:code 1400, :message "Access from unauthorized location [109.81.209.223]!"}]
+          expected-response {:code 1400 :message "Access from unauthorized location [109.81.209.223]!"}]
       (with-fake-http [(str cg/default-host "/v1.0/create") body]
         (assert-response expected-response :error (cg/create-payment {})))))
 
@@ -44,7 +44,7 @@
       (with-fake-http [(str host "/v1.0/create") body]
         (assert-response expected-response :ok (cg/create-payment params host)))))
 
-  (testing "should not create payment, invalid response"
+  (testing "should not create payment invalid response"
     (let [params {:country :CZ
                   :curr :CZK
                   :email "my@mail.com"
@@ -64,7 +64,7 @@
 
 (deftest get-status-test
   (testing "should return status pending"
-    (let [params {:merchant "0987", :secret "1234", :transId "AAAA-BBBB-CCCC"}
+    (let [params {:merchant "0987" :secret "1234", :transId "AAAA-BBBB-CCCC"}
           body (str "code=0&message=OK&merchant=0987&test=true&price=10000&curr=CZK&label=Test+label&refId=1"
                     "&cat=DIGITAL&method=&email=my%2Bcomgate%40gmail.com&name=&transId=AAAA-BBBB-CCCC"
                     "&secret=1234&status=PENDING&fee=unknown&vs=")
@@ -89,7 +89,7 @@
         (assert-response expected-response :ok (cg/get-status params)))))
 
   (testing "should return status paid"
-    (let [params {:merchant "0987", :secret "1234", :transId "AAAA-BBBB-CCCC"}
+    (let [params {:merchant "0987" :secret "1234", :transId "AAAA-BBBB-CCCC"}
           body (str "code=0&message=OK&merchant=0987&test=true&price=10000&curr=CZK&label=Test+label&refId=1"
                     "&cat=DIGITAL&method=BANK_CZ_CSOB&email=my%2Bcomgate%40gmail.com&name=&transId=AAAA-BBBB-CCCC"
                     "&secret=1234&status=PAID&fee=unknown&vs=43279543")
@@ -115,11 +115,11 @@
 
   (testing "should not return status"
     (let [body "code=1400&message=Access+from+unauthorized+location+%5B109.81.209.223%5D%21"
-          expected-response {:code 1400, :message "Access from unauthorized location [109.81.209.223]!"}]
+          expected-response {:code 1400 :message "Access from unauthorized location [109.81.209.223]!"}]
       (with-fake-http [(str cg/default-host "/v1.0/status") body]
         (assert-response expected-response :error (cg/get-status {})))))
 
-  (testing "should not return status, invalid response"
+  (testing "should not return status invalid response"
     (let [params {:country :CZ
                   :curr :CZK
                   :email "my@mail.com"
@@ -135,3 +135,23 @@
                   :test true}]
       (with-fake-http [(str host "/v1.0/status") ""]
         (assert-response nil :error-unmarshalling (cg/get-status params host))))))
+
+
+(deftest payment-result-response->map-test
+  (is (= {:cat :DIGITAL
+          :curr :CZK
+          :email "info@customer.com"
+          :label "Beatles - Help!"
+          :merchant "merchant_com"
+          :method :CARD
+          :phone "+420123456789"
+          :price 10000
+          :refId "2010102600"
+          :secret "ZXhhbXBsZS5jb206QUJDeHl6"
+          :status :PAID
+          :test false
+          :transId "AB12-EF34-IJ56"}
+         (cg/payment-result-response->map
+           (str "merchant=merchant_com&test=false&price=10000&curr=CZK&label=Beatles%20-%20Help!&refId=2010102600"
+                "&cat=DIGITAL&method=CARD&email=info%40customer.com&phone=%2B420123456789&transId=AB12-EF34-IJ56"
+                "&secret=ZXhhbXBsZS5jb206QUJDeHl6&status=PAID")))))

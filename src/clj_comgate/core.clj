@@ -78,20 +78,42 @@
    (s/optional-key :vs) s/Str})
 
 
-(def coerce-payment-success-response (c/coercer PaymentSuccessResponse c/string-coercion-matcher))
-(def coerce-status-success-response (c/coercer StatusSuccessResponse c/string-coercion-matcher))
-(def coerce-error-response (c/coercer ErrorResponse c/string-coercion-matcher))
+(def PaymentResultResponse
+  {:merchant s/Str
+   :test s/Bool
+   :price s/Int
+   :curr s/Keyword
+   :label s/Str
+   :refId s/Str
+   (s/optional-key :payerId) s/Str
+   (s/optional-key :payerName) s/Str
+   (s/optional-key :payerAcc) s/Str
+   (s/optional-key :method) s/Keyword
+   (s/optional-key :account) s/Str
+   :email s/Str
+   (s/optional-key :phone) s/Str
+   (s/optional-key :name) s/Str
+   :transId s/Str
+   :secret s/Str
+   :status s/Keyword
+   (s/optional-key :fee) s/Str
+   (s/optional-key :eetData) s/Str
+   (s/optional-key :cat) s/Keyword
+   (s/optional-key :vs) s/Str})
 
 
 (defn coerce-response
   [success-c error-c response-m]
-  (let [coerce (if (= "0" (:code response-m)) success-c error-c)]
+  (let [coerce (if (or (nil? error-c)
+                       (= "0" (:code response-m)))
+                 success-c
+                 error-c)]
     (-> response-m
         coerce
         (update-key-if-exists :method keyword-or-nil)))) ;; otherwise keyword is created for an empty string
 
 
-(defn- query->map
+(defn query->map
   [coerce-success-response coerce-error-response qstr]
   (when-not (string/blank? qstr)
     (some->> (string/split qstr #"&")
@@ -103,6 +125,24 @@
       (into {})
       (tol/update-keys keyword)
       (coerce-response coerce-success-response coerce-error-response))))
+
+
+;; coercers for responses
+(def coerce-payment-success-response (c/coercer PaymentSuccessResponse c/string-coercion-matcher))
+(def coerce-status-success-response (c/coercer StatusSuccessResponse c/string-coercion-matcher))
+(def coerce-error-response (c/coercer ErrorResponse c/string-coercion-matcher))
+(def coerce-payment-result-response (c/coercer PaymentResultResponse c/string-coercion-matcher))
+
+
+;; parsers for responses
+(def payment-success-response->map (partial query->map coerce-payment-success-response coerce-error-response))
+(def status-success-response->map (partial query->map coerce-status-success-response coerce-error-response))
+(def payment-result-response->map (partial query->map coerce-payment-result-response nil))
+
+(def payment-result-success-response
+  {:status 200
+   :body "code=0&message=OK"
+   :headers {"Content-Type" "application/x-www-form-urlencoded; charset=utf-8"}})
 
 
 (defn- http-opts
@@ -128,7 +168,7 @@
   ([opts host]
    (let [uri (str host "/v1.0/create")
          http-response @(http/post uri (http-opts opts))
-         response (query->map coerce-payment-success-response coerce-error-response (:body http-response))]
+         response (payment-success-response->map (:body http-response))]
      (case (:code response)
        0 [:ok response http-response]
        nil [:error-unmarshalling response http-response]
@@ -148,7 +188,7 @@
   ([opts host]
    (let [uri (str host "/v1.0/status")
          http-response @(http/post uri (http-opts opts))
-         response (query->map coerce-status-success-response coerce-error-response (:body http-response))]
+         response (status-success-response->map (:body http-response))]
      (case (:code response)
        0 [:ok response http-response]
        nil [:error-unmarshalling response http-response]
