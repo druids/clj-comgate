@@ -67,3 +67,17 @@ Returns a status of requested payment by `opts`.
 ;;  {:code 0, :label "Test label", :message "OK", ...
 ;;  {:request-time 386, ...
 ```
+
+
+### payment-result-response->map
+
+In case you want to handle [the push payment result](https://platebnibrana.comgate.cz/cz/protokol-api#sidemenu-link-13)
+you can use `payment-result-response->map` to parse a request body:
+
+```clojure
+(:body request) ;; a Ring request "merchant=merchant_com&test=false&price=10000...
+(comgate/payment-result-response->map (:body request)) ;; {:merchant "merchant_com", ...
+```
+
+When accepting the push request Comgate expects OK response, thus you can use `comgate/payment-result-success-response`
+for it (it's a Ring's response).
