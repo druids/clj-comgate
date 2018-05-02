@@ -4,7 +4,7 @@
   :license {:name "MIT License"
             :url "http://opensource.org/licenses/MIT"}
 
-  :dependencies [[http-kit "2.2.0"]
+  :dependencies [[http-kit "2.3.0"]
                  [prismatic/schema "1.1.9"]
                  [tol "0.8.0"]]
 
